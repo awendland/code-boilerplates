@@ -4,6 +4,7 @@ import subprocess
 import shutil
 import os
 import sys
+import tempfile
 
 
 class c:
@@ -17,37 +18,42 @@ class c:
     UNDERLINE = '\033[4m'
 
 
-BASE_URL = "";
-TEMPLATES_URL = "";
+REPO_URL = "https://github.com/awendland/code-boilerplates.git";
+TEMPLATES_URL = "https://raw.githubusercontent.com/awendland/code-boilerplates/master/templates.json";
 
 
 def get_avail_templates():
-	with urllib2.urlopen(TEMPLATES_URL) as response:
-		return json.loads(response.read())
+	return json.loads(urllib2.urlopen(TEMPLATES_URL).read())
 
 
 def load_template(template, location):
 	try:
-		git_clone_args = "clone --depth=1 %s %s" % (BASE_URL + template, location)
-		subprocess.check_output(["git", git_clone_args])
-		shutil.rmtree(os.join(location, ".git"))
-		subprocess.check_output(["git", "init"])
+		temp_dir = tempfile.mkdtemp()
+		print(c.OKBLUE)
+		subprocess.check_output(["git", "clone", "--depth=1", REPO_URL, temp_dir])
+		print(c.END + c.OKGREEN + "\nCopying to %s" % location + c.END)
+		shutil.copytree(os.path.join(temp_dir, template), location)
+		print(c.OKGREEN + "Initializing git repository at " + c.UNDERLINE + location + c.END)
+		subprocess.check_output(["git", "init", location])
 		return None
 	except subprocess.CalledProcessError, e:
 		return e
+	finally:
+		if temp_dir:
+			shutil.rmtree(temp_dir)
 
 
 def __print_avail_templates(avail_templates):
 	avail_templates.sort(key = lambda t: t['name'])
 	for template in avail_templates:
-		print(c.HEADER + template['name'] + c.END + "\n"
+		print(c.HEADER + c.UNDERLINE + template['name'] + c.END + "\n"
 			+ c.OKGREEN + template['description'] + c.END + "\n"
-			+ c.OKBLUE + ", ".join(template['tags']) + c.END
-			+ "\n")
+			+ c.OKBLUE + ", ".join(template['tags']) + c.END)
 
 
 if __name__ == "__main__":
 	if len(sys.argv) == 1:
+		print("")
 		avail_templates = get_avail_templates()
 		__print_avail_templates(avail_templates)
 	elif len(sys.argv) == 3:
@@ -55,21 +61,21 @@ if __name__ == "__main__":
 		output_dir = sys.argv[2]
 		avail_templates = get_avail_templates()
 		is_valid_template = False
-		for template in avail_templates:
-			if template['name'] == template:
+		for t in avail_templates:
+			if t['name'] == template:
 				is_valid_template = True
 		if not is_valid_template:
-			print(end.FAIL + "The template '" + template + "' is not valid.\n")
+			print(c.FAIL + "The template '" + template + "' is not valid.\n")
 			__print_avail_templates(avail_templates)
-			return
+			sys.exit(1)
 		error_when_loading = load_template(template, output_dir)
 		if error_when_loading:
-			print(c.FAIL + "Error loading template:\n" + c.END
-				+ c.WARNING + e.output + c.END)
+			print(c.FAIL + "\nError loading template:\nError:\n" + c.END
+				+ c.WARNING + error_when_loading.output + c.END)
 		else:
 			print(c.OKGREEN + "Loaded " + c.END + c.OKBLUE
 				+ template + c.END + c.OKGREEN + " into "
-				+ c.END + c.OKBLUE + location + c.END + "\n")
+				+ c.END + c.OKBLUE + output_dir + c.END)
 	else:
 		print("Either use " + c.OKGREEN + "fleshcode.py" + c.END
 			+ " without arguments to get a list of available tempaltes, or "
