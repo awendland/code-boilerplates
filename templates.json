@@ -1,0 +1,7 @@
+[
+	{
+		"name": "web-less-js",
+		"description": "Basic web setup w/ JS rendered LESS 2.0, Normalize 3.0.1, and HTML5 Shiv.",
+		"tags": ["web", "less", "js", "html", "normalize"]
+	}
+]

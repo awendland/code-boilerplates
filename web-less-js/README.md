@@ -1,24 +1,26 @@
 ## Synopsis
 
-This is a repo containing boilerplate templates for various project stacks. It can be used by the `fleshcode.py` for easy project setup.
+This is a...
 
 ## Motivation
 
-I created this project in order to streamline to process for getting quick projects up and running. My goal is to have this repo come with everything that I need to get a project running, but nothing more. I am not looking to include anything that would have to be removed in other projects, only common libraries will make there way in here.
+I created this project in order to...
 
-## Commands
+## Installation and Usage
 
-`python fleshcode.py` will return a list of available templates to clone
+How to install and use this?
 
-`python fleshcode.py {template} {output_dir_name}` will clone the requested template into the provided directory name, then re-init the repo as a fresh git repository.
+## API Reference
 
-## Overview
+This project currently includes:
 
-A master config file in the root directory, called `templates.json` will contain basic info about the available templates.
+ * Normalize 3.0.1
+ * Less 2.0.0 (the JS client-side version)
+ * Vanilla JS :), *modern web dev doesn't need jquery*
 
 ## Contributors
 
-[Alex Wendland](https://github.com/awendland) maintains this repository. You can open an issue on this repo to discuss any changes.
+[Alex Wendland](https://github.com/awendland) built this template.
 
 ## License
 
