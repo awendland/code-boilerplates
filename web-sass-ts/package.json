@@ -1,0 +1,23 @@
+{
+  "name": "{{APPLICATION_NAME}}",
+  "version": "1.0.0",
+  "description": "{{APPLICATION_DESCRIPTION}}",
+  "main": "out/index.html",
+  "repository": "git",
+  "devDependencies": {
+    "del": "^2.0.2",
+    "gulp": "^3.9.0",
+    "gulp-concat": "^2.6.0",
+    "gulp-debug": "^2.1.0",
+    "gulp-inject-string": "^0.0.2",
+    "gulp-sass": "^2.0.4",
+    "gulp-sourcemaps": "^1.5.2",
+    "gulp-tslint": "^3.2.0",
+    "gulp-typescript": "^2.9.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
