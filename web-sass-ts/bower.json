@@ -1,0 +1,20 @@
+{
+  "name": "{{APPLICATION_NAME}}",
+  "version": "1.0.0",
+  "description": "{{APPLICATION_DESCRIPTION}}",
+  "authors": [
+    "Alex Wendland <me@alexwendland.com>"
+  ],
+  "main": "index.html",
+  "moduleType": [],
+  "license": "MIT",
+  "homepage": "",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}

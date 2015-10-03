@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-        "out": "main.js", 
+        "out": "app.js",
         "sourceMap": true, 
         "target": "es5"
     }, 

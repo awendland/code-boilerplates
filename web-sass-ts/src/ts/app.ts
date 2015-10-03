@@ -9,4 +9,6 @@ function greeter(person : Person) {
 
 var user = {firstname: 'Jane', lastname: 'User'};
 
-document.body.innerHTML = greeter(user);
+var divElem = document.createElement('div');
+divElem.innerHTML = greeter(user);
+document.body.appendChild(divElem);
