@@ -8,6 +8,15 @@ I created this project in order to...
 
 ## Installation and Usage
 
+#### First setup:
+
+ 1. Change the instances of `{{APPLICATION_NAME}}` and `{{APPLICATION_DESCRIPTION}}` to meaningful entries
+ 2. Make sure that `npm`, `bower` and `gulp` are installed globally
+ 3. `npm install`
+ 4. `bower install`
+
+#### Development:
+
 Run `gulp` to view available tasks.
 
 `gulp build:*` commands will build TypeScript, or SASS, or HTML portions of the applications.
