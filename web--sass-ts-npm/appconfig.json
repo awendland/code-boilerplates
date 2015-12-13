@@ -1,0 +1,9 @@
+{
+    "environments": {
+        "dev": {
+        },
+        "production": {
+        }
+    },
+    "libraries": {}
+}

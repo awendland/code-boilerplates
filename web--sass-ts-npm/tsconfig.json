@@ -1,0 +1,21 @@
+{
+    "compilerOptions": {
+        "jsx": "react",
+        "sourceMap": true,
+        "target": "es5",
+        "module": "commonjs",
+        "experimentalDecorators": true
+    },
+    "compileOnSave": false,
+    "filesGlob": [
+        "./src/ts/**/*.ts",
+        "./src/ts/**/*.tsx"
+    ],
+    "files": [
+        "./src/ts/app.ts"
+    ],
+    "exclude": [],
+    "atom": {
+        "rewriteTsconfig": true
+    }
+}

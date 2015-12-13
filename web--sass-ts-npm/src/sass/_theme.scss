@@ -1,0 +1,33 @@
+/*
+ * Hard coded color values
+ */
+
+$color-UnrealFoodPills: #FA6900;
+$color-GreatGray: #36454f;
+$color-MetroBlue: #00B4FF;
+$color-LoversGray: #515151;
+$color-QWhite: #EEEEEE;
+$color-CertainManoeuvres: #295266;
+
+/*
+ * Standard color constants
+ */
+
+$primaryColor: $color-MetroBlue;
+$secondaryColor: $color-UnrealFoodPills;
+$primaryDarkColor: $color-GreatGray;
+$secondaryDarkColor: darken($color-MetroBlue, 30%);
+$primaryTextColor: #333;
+$primaryDarkTextColor: #fff;
+
+/*
+ * Apply general coloring to the page
+ */
+
+html {
+	color: $primaryTextColor;
+}
+
+body {
+	background: $primaryDarkColor;
+}

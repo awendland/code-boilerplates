@@ -1,0 +1,214 @@
+@charset "UTF-8";
+
+//////////////////////////////
+// Variables
+//////////////////////////////
+$pi: 3.1415926535897932384626433832795028841971693993751;
+$π: $pi;
+@function pi() {
+    @return $pi;
+}
+$e: 2.71828182845904523536028747135266249775724709369995;
+
+$iter: 50;
+
+@function strip-units($value) {
+    @return $value / ($value * 0 + 1);
+}
+
+//////////////////////////////
+// Exponent
+//////////////////////////////
+@function exponent($base, $exponent) {
+    // reset value
+    $value: $base;
+    // positive intergers get multiplied
+    @if $exponent > 1 {
+        @for $i from 2 through $exponent {
+            $value: $value * $base;
+        }
+    }
+    // negitive intergers get divided. A number divided by itself is 1
+    @if $exponent < 1 {
+        @for $i from 0 through -$exponent {
+            $value: $value / $base;
+        }
+    }
+    // return the last value written
+    @return $value;
+}
+
+@function pow($base, $exponent) {
+    @return exponent($base, $exponent);
+}
+
+//////////////////////////////
+// Factorial
+//////////////////////////////
+@function factorial($number) {
+    // reset value
+    $value: 1;
+    // positive intergers get multiplied
+    @if $number > 0 {
+        @for $i from 1 through $number {
+            $value: $value * $i;
+        }
+    }
+    @return $value;
+}
+
+//////////////////////////////
+// Root Functions
+//////////////////////////////
+// Basic General-Purpose Root Function
+@function n-root($number, $n) {
+    @if $number < 1 {
+        @return ERROR;
+        @warn ROOT ERROR;
+    }
+    // If a whole number, generate it quickly
+    @for $i from 1 through $number {
+        @if exponent($i, $n) == $number {
+            @return $i;
+        }
+    }
+    // Else, run through other options
+    @for $i from 1 through $number * 1000 / 2 {
+        @if round(exponent($i / 1000, $n) * 100) == round($number * 100) {
+            @return $i / 1000;
+        }
+    }
+}
+
+@function root($number, $n) {
+    @return n-root($number, $n);
+}
+
+// Square Roots
+@function √($number) {
+    @return sqrt($number);
+}
+
+@function sqrt($number) {
+    $root: 4;
+    $unit-less-num: strip-units($number);
+    @for $i from 1 through $iter {
+        $root: $root - (pow($root, 2) - $unit-less-num) / (2 * $root);
+    }
+    $unitSquared: unit($number);
+    @if str-length($unitSquared) > 0 {
+        $unitLength: str-index($unitSquared, '*');
+        @if not $unitLength {
+            @warn 'Invalid units for sqrt: #{$unitSquared}';
+            @return false;
+        }
+        $unitLength: $unitLength - 1;
+        $unitDimens: (str-length($unitSquared) + 1) / ($unitLength + 1);
+        $unitBase: str-slice($unitSquared, 1, $unitLength);
+        $unitProper: '';
+        @for $i from 1 through $unitDimens / 2 {
+            $unitProper: $unitProper + $unitBase;
+        }
+        $root: $root * (1 + $unitProper);
+    }
+    @return $root;
+}
+
+//////////////////
+// Trigonometry //
+//////////////////
+
+$default-threshold: pi()/180/20;
+
+@function convert-angle($value, $unit-name) {
+    $factors: (
+    rad: 1rad,
+    deg: 180deg/pi(),
+    grad: 200grad/pi(),
+    turn: .5turn/pi()
+    );
+
+    @if not unitless($value) {
+        @warn '`#{$value}` should be unitless';
+        @return false;
+    }
+
+    @if not map-has-key($factors, $unit-name) {
+        @warn 'unit `#{$unit-name}` is not a valid unit - please make sure it is either `deg`, `rad`, `grad` or `turn`';
+        @return false;
+    }
+
+    @return $value*map-get($factors, $unit-name);
+}
+
+// Maclaurin series can be used to estimate Sine and Consine
+@function maclaurin($start, $key, $number) {
+    $value: $start;
+    $add: 0;
+    @for $i from 1 through $iter {
+        @if $add == 0 {
+            $value: $value - ( exponent($number, $key) / factorial($key) );
+            $add: 1;
+        }
+        @else {
+            $value: $value + ( exponent($number, $key) / factorial($key) );
+            $add: 0;
+        }
+        $key: $key + 2;
+    }
+    @return $value;
+}
+
+@function sin($number, $unit-name: deg) {
+    @return convert-angle(maclaurin($number, 3, $number), $unit-name);
+}
+
+@function cos($number, $unit-name: deg) {
+    @return convert-angle(maclaurin(1, 2, $number), $unit-name);
+}
+
+// Trig Identity: Tangent = Sine divided by Cosine.
+@function tan($number, $unit-name: deg) {
+    @return sin($number, $unit-name) / cos($number, $unit-name);
+}
+
+@function asin($z, $unit-name: deg, $threshold: $default-threshold) {
+    $sum: 0;
+    $complement: false;
+    $sign: if($z != 0, $z / abs($z), 1);
+    $z: abs($z);
+
+    @if $z > 1 {
+        @warn 'illegal `#{$z}` value for function';
+        @return false;
+    }
+
+    @if $z > sin(pi() / 4) {
+        $complement: true;
+        $z: sqrt(1 - pow($z, 2));
+    }
+
+    $term: $z;
+    $i: 0;
+    $k: 1;
+
+    @while $term > $threshold {
+        $sum: $sum + $term;
+
+        $i: $i + 1;
+        $k: $k*(2*$i - 1)/(2*$i);
+        $j: 2*$i + 1;
+
+        $term: $k*pow($z, $j)/$j;
+    }
+
+    @return convert-angle($sign*(if($complement, pi()/2 - $sum, $sum)), $unit-name);
+}
+
+@function acos($z, $unit-name: deg, $threshold: $default-threshold) {
+    @return convert-angle(pi()/2, $unit-name) - asin($z, $unit-name, $threshold);
+}
+
+@function atan($z, $unit-name: deg, $threshold: $default-threshold) {
+    @return asin($z / sqrt(1 + 1 * pow($z, 2)), $unit-name, $threshold);
+}

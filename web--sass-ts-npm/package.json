@@ -1,0 +1,36 @@
+{
+  "name": "CHANGE_THIS",
+  "version": "1.0.0",
+  "description": "CHANGE_THIS",
+  "main": "out/index.html",
+  "repository": "git",
+  "devDependencies": {
+    "aliasify": "^1.8.0",
+    "browserify": "^11.2.0",
+    "chalk": "^1.1.1",
+    "del": "^2.0.2",
+    "gulp": "^3.9.0",
+    "gulp-autoprefixer": "^3.1.0",
+    "gulp-concat": "^2.6.0",
+    "gulp-debug": "^2.1.0",
+    "gulp-replace": "^0.5.4",
+    "gulp-sass": "^2.0.4",
+    "gulp-sass-bulk-import": "^0.3.2",
+    "gulp-server-livereload": "^1.5.3",
+    "gulp-sourcemaps": "^1.5.2",
+    "gulp-tslint": "^3.2.0",
+    "gulp-typescript": "^2.9.0",
+    "gulp-uglify": "^1.4.1",
+    "gulp-util": "^3.0.7",
+    "merge2": "^0.3.6",
+    "tsd": "^0.6.4",
+    "vinyl-buffer": "^1.0.0",
+    "vinyl-source-stream": "^1.1.0"
+  },
+  "scripts": {
+    "help": "gulp"
+  },
+  "author": "",
+  "license": "private",
+  "dependencies": {}
+}

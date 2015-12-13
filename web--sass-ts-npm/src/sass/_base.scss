@@ -1,0 +1,11 @@
+/* Apply a natural box layout model to all elements, but allowing components to change
+   source: http://www.paulirish.com/2012/box-sizing-border-box-ftw/ */
+html {
+	box-sizing: border-box;
+}
+*, *:before, *:after {
+	box-sizing: inherit;
+}
+
+$screen-mobile-max: 545px;
+$screen-desktop-min: 945px;
