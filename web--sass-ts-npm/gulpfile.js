@@ -1,23 +1,35 @@
 // Minimum dependencies to run environment information section
-var chalk = require('chalk');
+var chalk = require('chalk'),
+    gulpUtil = require('gulp-util');
 
 /*
  * Environment variables
  */
-var DEBUG = process.env.DEBUG !== 'false';
+// Debug or production mode
+if (gulpUtil.env.hasOwnProperty('prod') || gulpUtil.env.hasOwnProperty('production')) {
+    process.env.NODE_ENV = 'production';
+}
+var DEBUG = ['production', 'prod'].indexOf(process.env.NODE_ENV) === -1;
+// Should show build notifications?
+var NOTIFY = gulpUtil.env.hasOwnProperty('notify');
 
 /*
  * Print information about the current environment
  */
 // Print information about the build environment flag
-console.log('Running with ' + chalk.yellow('DEBUG') + ' flag ' +
-    'set to ' + chalk.magenta(String(DEBUG)) + '. Set ' + chalk.yellow('DEBUG') +
-    ' environment variable to ' + chalk.magenta(String(!DEBUG)) +
-    ' in order to turn ' + (DEBUG ? 'on' : 'off') + ' minification, etc.\n');
+console.log('Running with ' + chalk.yellow('NODE_ENV') + ' flag ' +
+    'set to ' + chalk.magenta(DEBUG ? 'dev' : process.env.NODE_ENV) +
+    '. Set ' + chalk.yellow('NODE_ENV') + ' environment variable to ' +
+    chalk.magenta('production') + ' in order to turn off minification, etc.\n');
+// Print information about notification flag
+console.log('Notifications are ' + chalk.magenta(NOTIFY ? 'enabled' : 'not enabled') +
+    '. Use the flag ' + chalk.yellow('--notify') + ' in order to turn on notifications.\n');
 
+
+console.log(chalk.green('Loading dependencies'));
 /*
- * Build dependencies
- */
+* Build dependencies
+*/
 var gulp = require('gulp'),
     gulpAutoprefixer = require('gulp-autoprefixer'),
     gulpConcat = require('gulp-concat'),
@@ -30,14 +42,15 @@ var gulp = require('gulp'),
     gulpTs = require('gulp-typescript'),
     gulpTsLint = require('gulp-tslint'),
     gulpUglify = require('gulp-uglify'),
-    gulpUtil = require('gulp-util'),
     browserify = require('browserify'),
     del = require('del'),
     exec = require('child_process').exec,
     fs = require('fs');
     merge = require('merge2'),
+    resolve = require('resolve'),
     vinylBuffer = require('vinyl-buffer'),
     vinylSource = require('vinyl-source-stream');
+console.log(chalk.green('Dependencies loaded'));
 
 /*
  * Paths to configs, source, output, temp files & folders
@@ -88,9 +101,29 @@ function browserifyError(error) {
             : error.toString());
 }
 
+// Show a notification about a build error
+function notify(title) {
+    if (NOTIFY) {
+        var nodeNotifier = require('node-notifier');
+        return function(error) {
+            nodeNotifier.notify({
+                title: title,
+                message: error.message
+            });
+        }
+    } else {
+        return function() {};
+    }
+}
+
 // Get a configuration object from the appconfig.json file
 function getAppConfig(section) {
     return loadJson(appConfig)[section];
+}
+
+// Get the dependencies from the package.json file
+function getPackageDependencyIds() {
+    return Object.keys(loadJson('package.json')['dependencies']) || [];
 }
 
 // Return a function for replacing KEYS with their VALUES as setup in the
@@ -112,13 +145,17 @@ gulp.task('ts:lint', function () {
     return gulp.src(srcTs)
         .pipe(gulpTsLint('tslint.json'))
         .pipe(gulpTsLint.report('prose'));
+        /* Stream breaks if this is called:
+         * .on('error', notify('TypeScript Linting'))
+         */
 });
 
 gulp.task('ts:compile', ['ts:lint'], function () {
-    /** Run ts:lint and then compile the TS source w/ config from tsconfig.js and a sourcemap into app.js */
+    /** Run ts:lint and then compile the TS source w/ config from tsconfig.js and a sourcemap into tmp/app.js */
     return gulp.src(srcTs)
         .pipe(DEBUG ? gulpSourceMaps.init() : gulpUtil.noop())
             .pipe(gulpTs(configTs))
+            .on('error', notify('TypeScript Compilation'))
             .js
             .pipe(gulpReplace(CONFIG_MAPPING_REGEX, getConfigMapper()))
             .pipe(DEBUG ? gulpUtil.noop() : gulpUglify())
@@ -127,16 +164,18 @@ gulp.task('ts:compile', ['ts:lint'], function () {
 });
 
 gulp.task('build:ts', ['ts:compile'], function () {
-    /** Alias for ts:compile */
+    /** Run ts:compile and then process imports using browserify */
     var b = browserify(tmpTs, {
-        debug: true
+        debug: DEBUG
     });
-    if (getAppConfig('aliases'))
+    if (getAppConfig('aliases')) {
         b.transform('aliasify', {
             aliases: getAppConfig('aliases')
         });
-        var libraries = getAppConfig('libraries');
-    Object.keys(libraries).forEach(function(lib) {b.external(lib)});
+    }
+    getPackageDependencyIds().forEach(function (id) {
+        b.external(id);
+    });
     return b
         .bundle()
             .on('error', function (error) {
@@ -149,7 +188,7 @@ gulp.task('build:ts', ['ts:compile'], function () {
         .pipe(gulp.dest(outDir));
 });
 
-gulp.task('watch:ts', function () {
+gulp.task('watch:ts', ['build:ts'], function () {
     /** Watch for changes in the TS source and rebuild the app when needed */
     gulp.watch(srcTs, ['build:ts']);
 });
@@ -157,10 +196,12 @@ gulp.task('watch:ts', function () {
 gulp.task('build:js', function () {
     /** Concat and minify any JS in src/js/ and/or referenced in libraries.json */
     var b = browserify();
-    var libraries = getAppConfig('libraries');
-    Object.keys(libraries).forEach(function(lib) {
-        var libConfig = libraries[lib];
-        b.require(libConfig.path, {expose: lib});
+    console.log('Packaging vendor libraries:');
+    getPackageDependencyIds().forEach(function (id) {
+        var path = resolve.sync(id);
+        var endOfPath = 'node_modules' + path.split('node_modules')[1];
+        console.log('    ' + chalk.magenta(id) + ' from ' + chalk.green(endOfPath));
+        b.require(path, { expose: id });
     });
     return b
         .bundle()
@@ -174,7 +215,7 @@ gulp.task('build:js', function () {
         .pipe(gulp.dest(outDir));
 });
 
-gulp.task('watch:js', function() {
+gulp.task('watch:js', ['build:js'], function() {
     /** Watch for changes in the library JS and rebuild the lib.js bundle when needed */
     gulp.watch([srcJs, appConfig], ['build:js']);
 });
@@ -189,6 +230,7 @@ gulp.task('build:sass', function () {
                 outputStyle: DEBUG ? 'nested' : 'compressed'
             })
             .on('error', gulpSass.logError))
+            .on('error', notify('Sass Compilation'))
         .pipe(gulpAutoprefixer({
             browsers: ['last 2 versions'],
             cascade: DEBUG
@@ -197,7 +239,7 @@ gulp.task('build:sass', function () {
         .pipe(gulp.dest(outCss));
 });
 
-gulp.task('watch:sass', function () {
+gulp.task('watch:sass', ['build:sass'], function () {
     /** Watch for changes in the SASS and rebuild the styling when needed */
     gulp.watch(srcSass, ['build:sass']);
 });
@@ -208,7 +250,7 @@ gulp.task('build:assets', function () {
         .pipe(gulp.dest(outAssets));
 });
 
-gulp.task('watch:assets', function () {
+gulp.task('watch:assets', ['build:assets'], function () {
     /** Watch for changes in the assets and rebuild the assets when needed */
     gulp.watch(srcAssets, ['build:assets']);
 });
@@ -220,7 +262,7 @@ gulp.task('build:html', function () {
         .pipe(gulp.dest(outDir));
 });
 
-gulp.task('watch:html', function () {
+gulp.task('watch:html', ['build:html'], function () {
     /** Watch for changes in the HTML and rebuild the HTML when needed */
     gulp.watch(srcIndex, ['build:html']);
 });
@@ -240,7 +282,7 @@ gulp.task('build:all', ['clean'], function () {
 gulp.task('build', ['build:all']);
 /** Alias for build:all */
 
-gulp.task('watch:all', ['build:all'], function () {
+gulp.task('watch:all', ['clean'], function () {
     /** Watch and rebuild application for any changes in source */
     gulp.start(['watch:ts', 'watch:sass', 'watch:html', 'watch:js', 'watch:assets']);
 });
@@ -252,11 +294,20 @@ gulp.task('serve', function () {
     if (!doesLocExist('out')) {
         console.log('\nRun `gulp build` in order to generate files to serve at `out/`\n');
     }
+    // Generate a port number between 8000 and 10000 based off of the app name
+    var nameSeed = require('./package.json')['name']
+        .split('')
+        .reduce(function (total, char) {
+            return total + char.codePointAt(0);
+        }, 0);
+    var portNumber = nameSeed % (1e4 - 8e3) + 8e3;
+    var portNumberLiveReload = nameSeed % (1e4 - 35e3) + 35e3;
     gulp.src('out')
         .pipe(gulpServer({
-            livereload: true,
+            livereload: portNumberLiveReload,
             directoryListing: false,
-            open: true
+            open: true,
+            port: portNumber
         }));
 });
 gulp.task('serve:watch', ['watch:all'], function () {
